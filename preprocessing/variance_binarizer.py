@@ -117,7 +117,7 @@ class VarianceBinarizer(BaseBinarizer):
             ds = ds[idx]
         return ds.get(attr)
 
-    def load_meta_data(self, raw_data_dir: pathlib.Path, ds_id, spk, lang):
+    def load_meta_data(self, raw_data_dir: pathlib.Path, ds_id, spk_id):
         meta_data_dict = {}
 
         with open(raw_data_dir / 'transcriptions.csv', 'r', encoding='utf8') as f:
@@ -139,22 +139,11 @@ class VarianceBinarizer(BaseBinarizer):
 
                 temp_dict = {
                     'ds_idx': item_idx,
-                    'spk_id': self.spk_map[spk],
-                    'spk_name': spk,
-                    'language_id': self.lang_map[lang],
-                    'language_name': lang,
+                    'spk_id': spk_id,
+                    'spk_name': self.speakers[ds_id],
                     'wav_fn': str(raw_data_dir / 'wavs' / f'{item_name}.wav'),
-                    'lang_seq': [
-                        (
-                            self.lang_map[lang if '/' not in p else p.split('/', maxsplit=1)[0]]
-                            if self.phoneme_dictionary.is_cross_lingual(p)
-                            else 0
-                        )
-                        for p in utterance_label['ph_seq'].split()
-                    ],
-                    'ph_seq': self.phoneme_dictionary.encode(require('ph_seq'), lang=lang),
-                    'ph_dur': [float(x) for x in require('ph_dur').split()],
-                    'ph_text': require('ph_seq'),
+                    'ph_seq': require('ph_seq').split(),
+                    'ph_dur': [float(x) for x in require('ph_dur').split()]
                 }
 
                 assert len(temp_dict['ph_seq']) == len(temp_dict['ph_dur']), \
@@ -190,7 +179,7 @@ class VarianceBinarizer(BaseBinarizer):
 
                 meta_data_dict[f'{ds_id}:{item_name}'] = temp_dict
 
-        return meta_data_dict
+        self.items.update(meta_data_dict)
 
     def check_coverage(self):
         super().check_coverage()
@@ -278,9 +267,7 @@ class VarianceBinarizer(BaseBinarizer):
             'spk_name': meta_data['spk_name'],
             'seconds': seconds,
             'length': length,
-            'languages': np.array(meta_data['lang_seq'], dtype=np.int64),
-            'tokens': np.array(meta_data['ph_seq'], dtype=np.int64),
-            'ph_text': meta_data['ph_text'],
+            'tokens': np.array(self.phone_encoder.encode(meta_data['ph_seq']), dtype=np.int64)
         }
 
         ph_dur_sec = torch.FloatTensor(meta_data['ph_dur']).to(self.device)

@@ -86,11 +86,11 @@ class DiffSingerAcoustic(CategorizedModule, ParameterAdaptorModule):
 
     def forward(
             self, txt_tokens, mel2ph, f0, key_shift=None, speed=None,
-            spk_embed_id=None, languages=None, gt_mel=None, infer=True, **kwargs
+            spk_embed_id=None, gt_mel=None, infer=True, **kwargs
     ) -> ShallowDiffusionOutput:
         condition, tpse_pred, gst_pred = self.fs2(
             txt_tokens, mel2ph, f0, key_shift=key_shift, speed=speed,
-            spk_embed_id=spk_embed_id, languages=languages, mel=gt_mel, infer=infer, 
+            spk_embed_id=spk_embed_id, languages=None, mel=gt_mel, infer=infer, 
             **kwargs
         )
         if infer:
@@ -256,8 +256,7 @@ class DiffSingerVariance(CategorizedModule, ParameterAdaptorModule):
         encoder_out, dur_pred_out = self.fs2(
             txt_tokens, midi=midi, ph2word=ph2word,
             ph_dur=ph_dur, word_dur=word_dur,
-            spk_embed=ph_spk_embed, languages=languages,
-            infer=infer
+            spk_embed=ph_spk_embed, infer=infer
         )
 
         if not self.predict_pitch and not self.predict_variances:
