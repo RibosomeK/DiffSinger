@@ -18,11 +18,14 @@ class FastSpeech2Variance(nn.Module):
         self.linguistic_mode = 'word' if hparams['predict_dur'] else 'phoneme'
 
         self.txt_embed = Embedding(vocab_size, hparams['hidden_size'], PAD_INDEX)
-        if self.use_lang_id:
-            self.lang_embed = Embedding(hparams['num_lang'] + 1, hparams['hidden_size'], padding_idx=0)
-            self.use_esm=hparams['use_esm']
-        else:
-            self.use_esm=False
+        try:
+            if self.use_lang_id:
+                self.lang_embed = Embedding(hparams['num_lang'] + 1, hparams['hidden_size'], padding_idx=0)
+                self.use_esm=hparams['use_esm']
+            else:
+                self.use_esm=False
+        except AttributeError:
+            self.use_esm = False
 
         if self.predict_dur:
             self.onset_embed = Embedding(2, hparams['hidden_size'])
@@ -78,9 +81,12 @@ class FastSpeech2Variance(nn.Module):
         else:
             ph_dur_embed = self.ph_dur_embed(ph_dur.float()[:, :, None])
             extra_embed = ph_dur_embed
-        if self.use_lang_id:
-            lang_embed = self.lang_embed(languages)
-        else:
+        try:
+            if self.use_lang_id:
+                lang_embed = self.lang_embed(languages)
+            else:
+                lang_embed = None
+        except AttributeError:
             lang_embed = None
             # extra_embed += lang_embed
         encoder_out = self.encoder(txt_embed, lang_embed, extra_embed, txt_tokens == 0)

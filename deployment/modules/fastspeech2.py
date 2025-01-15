@@ -127,42 +127,38 @@ class FastSpeech2VarianceONNX(FastSpeech2Variance):
         onset_embed = self.onset_embed(onset.long())
         ph_word_dur = torch.gather(F.pad(word_dur, [1, 0]), 1, ph2word)
         word_dur_embed = self.word_dur_embed(ph_word_dur.float()[:, :, None])
-<<<<<<< HEAD
         extra_embed = onset_embed + word_dur_embed
-        if self.use_lang_id:
-            lang_mask = torch.any(
-                tokens[..., None] == self.cross_lingual_token_idx[None, None],
-                dim=-1
-            )
-            lang_embed = self.lang_embed(languages * lang_mask)
-            # extra_embed += lang_embed
+        try: 
+            if self.use_lang_id:
+                lang_mask = torch.any(
+                    tokens[..., None] == self.cross_lingual_token_idx[None, None],
+                    dim=-1
+                )
+                lang_embed = self.lang_embed(languages * lang_mask)
+                # extra_embed += lang_embed
+        except AttributeError:
+            lang_embed = None
         x_masks = tokens == PAD_INDEX
         return self.encoder(txt_embed, lang_embed, extra_embed, x_masks), x_masks
-=======
-        x_masks = tokens == PAD_INDEX
-        return self.encoder(txt_embed, onset_embed + word_dur_embed, x_masks), x_masks
->>>>>>> parent of 8de1f72 (Merge branch 'main' into multi-dict)
 
     def forward_encoder_phoneme(self, tokens, ph_dur):
         txt_embed = self.txt_embed(tokens)
         ph_dur_embed = self.ph_dur_embed(ph_dur.float()[:, :, None])
-<<<<<<< HEAD
-        if self.use_lang_id:
-            lang_mask = torch.any(
-                tokens[..., None] == self.cross_lingual_token_idx[None, None],
-                dim=-1
-            )
-            lang_embed = self.lang_embed(languages * lang_mask)
-            # extra_embed = ph_dur_embed + lang_embed
-            extra_embed = ph_dur_embed
-        else:
-            extra_embed = ph_dur_embed
-        x_masks = tokens == PAD_INDEX
+        try:
+            if self.use_lang_id:
+                lang_mask = torch.any(
+                    tokens[..., None] == self.cross_lingual_token_idx[None, None],
+                    dim=-1
+                )
+                lang_embed = self.lang_embed(languages * lang_mask)
+                # extra_embed = ph_dur_embed + lang_embed
+            else:
+                lang_embed = None
+        except AttributeError:
+            lang_embed = None
+        extra_embed = ph_dur_embed
+        x_masks = tokens == PAD_INDEX;
         return self.encoder(txt_embed, lang_embed, extra_embed, x_masks), x_masks
-=======
-        x_masks = tokens == PAD_INDEX
-        return self.encoder(txt_embed, ph_dur_embed, x_masks), x_masks
->>>>>>> parent of 8de1f72 (Merge branch 'main' into multi-dict)
 
     def forward_dur_predictor(self, encoder_out, x_masks, ph_midi, spk_embed=None):
         midi_embed = self.midi_embed(ph_midi)
